@@ -85,8 +85,10 @@ void plan_init();
 #ifdef ENABLE_AUTO_BED_LEVELING
 void plan_buffer_line(float x, float y, float z, const float &e, float feed_rate, const uint8_t &extruder);
 
-// Get the position applying the bed level matrix if enabled
-vector_3 plan_get_position();
+  #ifndef DELTA
+  // Get the position applying the bed level matrix if enabled
+  vector_3 plan_get_position();
+  #endif
 #else
 void plan_buffer_line(const float &x, const float &y, const float &z, const float &e, float feed_rate, const uint8_t &extruder);
 #endif // ENABLE_AUTO_BED_LEVELING
@@ -106,12 +108,13 @@ void check_axes_activity();
 uint8_t movesplanned(); //return the nr of buffered moves
 
 extern unsigned long minsegmenttime;
-extern float max_feedrate[4]; // set the max speeds
-extern float axis_steps_per_unit[4];
-extern unsigned long max_acceleration_units_per_sq_second[4]; // Use M201 to override by software
+extern float max_feedrate[NUM_AXIS]; // set the max speeds
+extern float axis_steps_per_unit[NUM_AXIS];
+extern unsigned long max_acceleration_units_per_sq_second[NUM_AXIS]; // Use M201 to override by software
 extern float minimumfeedrate;
 extern float acceleration;         // Normal acceleration mm/s^2  THIS IS THE DEFAULT ACCELERATION for all moves. M204 SXXXX
 extern float retract_acceleration; //  mm/s^2   filament pull-pack and push-forward  while standing still in the other axis M204 TXXXX
+extern float travel_acceleration;  // Travel acceleration mm/s^2  THIS IS THE DEFAULT ACCELERATION for all NON printing moves. M204 MXXXX
 extern float max_xy_jerk; //speed than can be stopped at once, if i understand correctly.
 extern float max_z_jerk;
 extern float max_e_jerk;
@@ -151,15 +154,8 @@ FORCE_INLINE block_t *plan_get_current_block()
   return(block);
 }
 
-// Gets the current block. Returns NULL if buffer empty
-FORCE_INLINE bool blocks_queued() 
-{
-  if (block_buffer_head == block_buffer_tail) { 
-    return false; 
-  }
-  else
-    return true;
-}
+// Returns true if the buffer has a queued block, false otherwise
+FORCE_INLINE bool blocks_queued() { return (block_buffer_head != block_buffer_tail); }
 
 #ifdef PREVENT_DANGEROUS_EXTRUDE
 void set_extrude_min_temp(float temp);
